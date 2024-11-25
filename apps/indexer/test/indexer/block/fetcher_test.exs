@@ -49,7 +49,18 @@ defmodule Indexer.Block.FetcherTest do
 
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(
+        json_rpc_named_arguments: json_rpc_named_arguments,
+        poll: false
+      )
+
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
+      end)
+
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
